@@ -23,5 +23,6 @@ scipy
 Markdown
 python-dotenv
 
-# --- Production Server (Optional but Recommended) ---
+# --- Production Server ---
 gunicorn
+gevent
