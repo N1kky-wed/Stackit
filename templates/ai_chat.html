@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with Stellar AI - StackIt{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="container mt-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Chat with AI</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-robot me-2"></i>Chat with Stellar AI
+                </h4>
+                <small>Ask me anything! I can reference existing forum discussions to help you better.</small>
+            </div>
+            <div class="card-body d-flex flex-column" style="height: 70vh;">
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="flex-grow-1 mb-3 p-3 border rounded bg-light overflow-auto">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-robot fa-3x mb-3"></i>
+                        <h5>Hi! I'm Stellar, your AI assistant.</h5>
+                        <p>I can help you with questions and reference existing discussions from the forum.<br>
+                        What would you like to know?</p>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control" 
+                           placeholder="Ask me anything about programming, or any topic..." 
+                           onkeypress="handleChatKeypress(event)">
+                    <button class="btn btn-primary" onclick="sendChatMessage()" id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Marked.js for markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+<!-- Highlight.js for syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+<script>
+// Configure marked for markdown parsing
+marked.setOptions({
+    highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                return hljs.highlight(code, { language: lang }).value;
+            } catch (__) {}
+        }
+        return hljs.highlightAuto(code).value;
+    },
+    breaks: true,
+    gfm: true
+});
+
+function handleChatKeypress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Disable input while processing
+    input.disabled = true;
+    document.getElementById('sendButton').disabled = true;
+    
+    // Add user message
+    addChatMessage('user', message);
+    input.value = '';
+    
+    // Show typing indicator
+    const typingId = addChatMessage('ai', '<i class="fas fa-spinner fa-spin"></i> Thinking...', 'typing');
+    
+    // Send to AI
+    fetch('/ai_chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove typing indicator
+        const typingMsg = document.getElementById(typingId);
+        if (typingMsg) typingMsg.remove();
+        
+        // Add AI response with markdown rendering
+        addChatMessage('ai', data.response, null, data.context, true);
+        
+        // Re-enable input
+        input.disabled = false;
+        document.getElementById('sendButton').disabled = false;
+        input.focus();
+    })
+    .catch(error => {
+        const typingMsg = document.getElementById(typingId);
+        if (typingMsg) typingMsg.remove();
+        addChatMessage('ai', 'Sorry, I encountered an error. Please try again.');
+        
+        // Re-enable input
+        input.disabled = false;
+        document.getElementById('sendButton').disabled = false;
+        input.focus();
+    });
+}
+
+function addChatMessage(sender, message, className = null, context = null, isMarkdown = false) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-4 ${className || ''}`;
+    messageDiv.id = messageId;
+    
+    const isUser = sender === 'user';
+    const alignment = isUser ? 'text-end' : 'text-start';
+    const bgColor = isUser ? 'bg-primary text-white' : 'bg-white border';
+    const icon = isUser ? 'fas fa-user' : 'fas fa-robot';
+    const maxWidth = isUser ? '70%' : '85%';
+    
+    // Process message content
+    let processedMessage = message;
+    if (isMarkdown && !isUser) {
+        // Convert markdown to HTML for AI responses
+        processedMessage = marked.parse(message);
+    } else {
+        // Escape HTML for user messages
+        processedMessage = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    
+    // Build context HTML
+    let contextHtml = '';
+    if (context && context.length > 0) {
+        contextHtml = '<div class="mt-3 pt-3 border-top"><small class="text-muted fw-bold">Referenced discussions:</small>';
+        context.forEach(item => {
+            contextHtml += `
+                <div class="mt-2 p-2 bg-light border-start border-primary border-3">
+                    <a href="${item.link}" target="_blank" class="text-decoration-none fw-bold">
+                        <i class="fas fa-link me-1"></i>${item.title}
+                    </a>
+                    <div class="small text-muted mt-1">${item.description}</div>
+                    <div class="small text-info">Similarity: ${Math.round(item.similarity * 100)}%</div>
+                </div>`;
+        });
+        contextHtml += '</div>';
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="${alignment}">
+            <div class="d-inline-block p-3 rounded shadow-sm ${bgColor}" style="max-width: ${maxWidth};">
+                <div class="mb-2 fw-bold">
+                    <i class="${icon} me-2"></i>${isUser ? 'You' : 'Stellar AI'}
+                    <small class="text-muted ms-2">${new Date().toLocaleTimeString()}</small>
+                </div>
+                <div class="message-content">${processedMessage}</div>
+                ${contextHtml}
+            </div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    
+    // Apply syntax highlighting to new content
+    if (isMarkdown && !isUser) {
+        setTimeout(() => {
+            messageDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }, 10);
+    }
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return messageId;
+}
+
+// Focus input on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chatInput').focus();
+});
+</script>
+{% endblock %}
