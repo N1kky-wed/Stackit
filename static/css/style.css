@@ -1,6 +1,3 @@
-/*
-    StackIt - Unified Dark Theme Stylesheet V4.7 (Form Validation Fix)
-*/
 
 /* --- 1. Root Variables & Font Import --- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
@@ -362,12 +359,6 @@ code:not(pre > code) {
     border-top-left-radius: 0;
     border-top-right-radius: var(--border-radius);
     padding: 0;
-<<<<<<< HEAD
-=======
-}
-.tab-content .card-body {
-    padding: 1.5rem;
->>>>>>> 4dd0097816c56d18a2a1bdb9bf9a49659ff95804
 }
 .tab-content .card-body {
     padding: 1.5rem;
