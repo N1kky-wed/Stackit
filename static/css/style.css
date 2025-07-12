@@ -362,6 +362,12 @@ code:not(pre > code) {
     border-top-left-radius: 0;
     border-top-right-radius: var(--border-radius);
     padding: 0;
+<<<<<<< HEAD
+=======
+}
+.tab-content .card-body {
+    padding: 1.5rem;
+>>>>>>> 4dd0097816c56d18a2a1bdb9bf9a49659ff95804
 }
 .tab-content .card-body {
     padding: 1.5rem;
