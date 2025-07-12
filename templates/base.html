@@ -16,6 +16,12 @@
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fas fa-layer-group me-2"></i>StackIt</a>
+
+            <!-- FIX: Added Navbar Toggler for mobile view -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
@@ -28,7 +34,6 @@
                     {% if current_user.is_authenticated %}
                     <li class="nav-item me-2"><a href="{{ url_for('ask_question') }}" class="btn btn-light btn-sm">Ask Question</a></li>
                     
-                    <!-- FIX: Notification Bell Dropdown Added Back -->
                     <li class="nav-item dropdown mx-2">
                         <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell"></i>
