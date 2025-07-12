@@ -109,8 +109,7 @@ function initializeAutoRefresh() {
 
 // Refresh question data (votes, new answers)
 function refreshQuestionData() {
-    // This would typically make an AJAX call to get updated question data
-    // For now, we'll just update vote counts if they've changed
+ 
     updateVoteScores();
 }
 
@@ -120,12 +119,7 @@ function updateVoteScores() {
     voteScores.forEach(scoreElement => {
         const answerId = scoreElement.closest('.answer-card')?.dataset.answerId;
         if (answerId) {
-            // In a real implementation, you'd fetch the current score from the server
-            // fetch(`/api/answer/${answerId}/score`)
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         scoreElement.textContent = data.score;
-            //     });
+        
         }
     });
 }
@@ -159,8 +153,7 @@ function handleVote(button, answerId, voteType) {
     })
     .then(response => {
         if (response.ok) {
-            // Update UI optimistically
-            // In a real implementation, you'd get the new score from the response
+            
             const newScore = voteType === 'up' ? originalScore + 1 : originalScore - 1;
             scoreElement.textContent = newScore;
             
@@ -328,7 +321,7 @@ window.addEventListener('error', function(e) {
 // Service worker registration for offline functionality (future enhancement)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        // navigator.serviceWorker.register('/sw.js');
+        
     });
 }
 
