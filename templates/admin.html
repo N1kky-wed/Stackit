@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - StackIt{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="container mt-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Admin Panel</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-cog me-2"></i>Admin Panel
+            </h2>
+            <div>
+                <a href="{{ url_for('rebuild_index') }}" class="btn btn-warning">
+                    <i class="fas fa-sync me-1"></i>Rebuild Vector Index
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ users|length }}</h3>
+                        <p class="mb-0">Total Users</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ questions|length }}</h3>
+                        <p class="mb-0">Recent Questions</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h3>
+                        <p class="mb-0">Administrators</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ questions|selectattr('answers', 'equalto', [])|list|length }}</h3>
+                        <p class="mb-0">Unanswered</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="users-tab" data-bs-toggle="tab" 
+                        data-bs-target="#users" type="button" role="tab">
+                    <i class="fas fa-users me-1"></i>
+                    Users
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="questions-tab" data-bs-toggle="tab" 
+                        data-bs-target="#questions" type="button" role="tab">
+                    <i class="fas fa-question-circle me-1"></i>
+                    Questions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="answers-tab" data-bs-toggle="tab" 
+                        data-bs-target="#answers" type="button" role="tab">
+                    <i class="fas fa-comments me-1"></i>
+                    Answers
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="adminTabsContent">
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">User Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Reputation</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>
+                                            <a href="{{ url_for('profile', username=user.username) }}" 
+                                               class="text-decoration-none">
+                                                {{ user.username }}
+                                            </a>
+                                            {% if user.username == 'Stellar' %}
+                                            <span class="badge bg-primary ms-1">AI</span>
+                                            {% elif user.role == 'admin' %}
+                                            <span class="badge bg-danger ms-1">Admin</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' if user.role == 'ai' else 'secondary' }}">
+                                                {{ user.role.title() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ user.reputation }}</td>
+                                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if user.username != current_user.username and user.username != 'Stellar' %}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" type="button">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" type="button">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions Tab -->
+            <div class="tab-pane fade" id="questions" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Question Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Author</th>
+                                        <th>Answers</th>
+                                        <th>Views</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for question in questions %}
+                                    <tr>
+                                        <td>{{ question.id }}</td>
+                                        <td>
+                                            <a href="{{ url_for('question_detail', id=question.id) }}" 
+                                               class="text-decoration-none">
+                                                {{ question.title[:50] }}{% if question.title|length > 50 %}...{% endif %}
+                                            </a>
+                                            {% if question.accepted_answer %}
+                                            <i class="fas fa-check-circle text-success ms-1" title="Has accepted answer"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('profile', username=question.author.username) }}" 
+                                               class="text-decoration-none">
+                                                {{ question.author.username }}
+                                            </a>
+                                        </td>
+                                        <td>{{ question.answer_count }}</td>
+                                        <td>{{ question.views }}</td>
+                                        <td>{{ question.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('question_detail', id=question.id) }}" 
+                                                   class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button class="btn btn-outline-secondary" type="button">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a href="{{ url_for('admin_delete_question', id=question.id) }}" 
+                                                   class="btn btn-outline-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this question?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Answers Tab -->
+            <div class="tab-pane fade" id="answers" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Answer Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Content</th>
+                                        <th>Question</th>
+                                        <th>Author</th>
+                                        <th>Score</th>
+                                        <th>Accepted</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for answer in answers %}
+                                    <tr>
+                                        <td>{{ answer.id }}</td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;">
+                                                {{ answer.content[:100] }}{% if answer.content|length > 100 %}...{% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('question_detail', id=answer.question_id) }}" 
+                                               class="text-decoration-none">
+                                                {{ answer.question.title[:30] }}{% if answer.question.title|length > 30 %}...{% endif %}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('profile', username=answer.author.username) }}" 
+                                               class="text-decoration-none">
+                                                {{ answer.author.username }}
+                                            </a>
+                                            {% if answer.author.username == 'Stellar' %}
+                                            <span class="badge bg-primary ms-1">AI</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ answer.score }}</td>
+                                        <td>
+                                            {% if answer.is_accepted %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                            {% else %}
+                                            <i class="fas fa-circle text-muted"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ answer.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('question_detail', id=answer.question_id) }}" 
+                                                   class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('admin_delete_answer', id=answer.id) }}" 
+                                                   class="btn btn-outline-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this answer?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
