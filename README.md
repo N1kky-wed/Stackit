@@ -67,3 +67,30 @@ The system is architected around three core principles:
 *   **Data Flow:** The application follows a standard MVC-like pattern, with user requests being handled by Flask routes, processed by business logic, interacting with the SQLAlchemy models, and rendered via Jinja2 templates. Asynchronous JavaScript calls to API endpoints handle all real-time UI updates.
 *   **Scalability:** The architecture is designed for growth. The database can be seamlessly migrated from SQLite to PostgreSQL by changing a single environment variable. The use of SQLAlchemy's connection pooling and a stateless design philosophy ensures the application can be deployed behind a load balancer.
 *   **Security:** Security is a core consideration, addressed through CSRF protection on all forms, strong password hashing with `passlib`, role-based authorization decorators, and validation of all user input.
+
+
+### ⚠️ Developer Setup Notes
+
+1. Create a `.env` file in the root directory of the project and add your Gemini API key:
+
+    ```
+    GEMINI_API_KEY="YOUR_API_KEY"
+    ```
+
+    Replace the empty string with your actual Gemini API key.
+
+2. Install all required Python dependencies before running the app:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3. Run the application with:
+
+    ```bash
+    python main.py
+    ```
+
+This ensures all backend services, including the AI integration with **Google Gemini 2.5 Flash**, work correctly.
+
+
