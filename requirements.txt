@@ -1,27 +1,27 @@
 # --- Core Web Framework & Dependencies ---
-Flask==3.0.3
-Flask-SQLAlchemy==3.1.1
-Flask-Login==0.6.3
-Flask-WTF==1.2.1
-SQLAlchemy==2.0.30
-Werkzeug==3.0.3
-Jinja2==3.1.4
-itsdangerous==2.2.0
-click==8.1.7
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+SQLAlchemy
+Werkzeug
+Jinja2
+itsdangerous
+click
 
 # --- Forms & Validation ---
-WTForms==3.1.2
-email-validator==2.2.0
+WTForms
+email-validator
 
 # --- AI & Vectorization ---
-google-genai==0.7.1
-scikit-learn==1.5.0
-numpy==1.26.4
-scipy==1.13.1
+google-genai
+scikit-learn
+numpy
+scipy
 
 # --- Utilities ---
-Markdown==3.6
-python-dotenv==1.0.1
+Markdown
+python-dotenv
 
 # --- Production Server (Optional but Recommended) ---
-gunicorn==22.0.0
+gunicorn
