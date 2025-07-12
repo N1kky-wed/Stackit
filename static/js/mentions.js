@@ -1,5 +1,3 @@
-// static/js/mentions.js
-
 class MentionAutocomplete {
     constructor(quill) {
         this.quill = quill;
@@ -25,16 +23,20 @@ class MentionAutocomplete {
             }
         });
 
-        // Register keyboard bindings
         this.quill.keyboard.addBinding({ key: 'ArrowDown' }, this.navigateDropdown.bind(this, 'down'));
         this.quill.keyboard.addBinding({ key: 'ArrowUp' }, this.navigateDropdown.bind(this, 'up'));
-        this.quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
+        
+        this.quill.keyboard.addBinding({
+            key: 'Enter',
+            shiftKey: null,
+        }, (range, context) => {
             if (this.dropdown) {
                 this.selectActiveUser();
-                return false; // Prevent Quill from handling Enter
+                return false;
             }
-            return true; // Allow Quill to handle Enter normally
+            return true;
         });
+
         this.quill.keyboard.addBinding({ key: 'Escape' }, this.hideDropdown.bind(this));
     }
 
@@ -55,7 +57,6 @@ class MentionAutocomplete {
             return;
         }
         
-        // FIX: Use Quill v2 compatible method to get text before cursor
         const textBeforeCursor = this.quill.getText(0, selection.index);
         const atIndex = textBeforeCursor.lastIndexOf('@');
 
@@ -93,7 +94,7 @@ class MentionAutocomplete {
             if (index === 0) item.classList.add('active');
             item.dataset.username = user.username;
             item.innerHTML = `<span class="fw-bold">${user.username}</span> <small class="text-muted ms-1">(${user.role})</small>`;
-            item.addEventListener('mousedown', (e) => { // Use mousedown to fire before blur
+            item.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 this.selectUser(user.username);
             });
@@ -105,11 +106,12 @@ class MentionAutocomplete {
     }
     
     positionDropdown() {
+        if (!this.dropdown) return;
         const bounds = this.quill.getBounds(this.mentionStartIndex);
         this.dropdown.style.position = 'absolute';
         this.dropdown.style.left = `${bounds.left}px`;
         this.dropdown.style.top = `${bounds.bottom + 5}px`;
-        this.dropdown.style.zIndex = '1050'; // Ensure it's above other elements
+        this.dropdown.style.zIndex = '1050';
     }
 
     hideDropdown() {
@@ -117,7 +119,7 @@ class MentionAutocomplete {
             this.dropdown.remove();
             this.dropdown = null;
         }
-        return true; // Let other handlers run
+        return true;
     }
 
     navigateDropdown(direction) {
@@ -131,7 +133,7 @@ class MentionAutocomplete {
         }
         if (active) active.classList.remove('active');
         if (next) next.classList.add('active');
-        return false; // Prevent default arrow behavior
+        return false;
     }
 
     selectActiveUser() {
@@ -144,11 +146,16 @@ class MentionAutocomplete {
 
     selectUser(username) {
         const selection = this.quill.getSelection();
-        const queryLength = selection.index - this.mentionStartIndex;
-        
-        this.quill.deleteText(this.mentionStartIndex, queryLength);
-        this.quill.insertText(this.mentionStartIndex, username + ' ');
-        this.quill.setSelection(this.mentionStartIndex + username.length + 1);
+        if (!selection) return;
+
+        const lengthToDelete = selection.index - this.mentionStartIndex;
+
+        this.quill.deleteText(this.mentionStartIndex, lengthToDelete);
+
+        this.quill.insertText(this.mentionStartIndex, `@${username} `);
+
+        this.quill.setSelection(this.mentionStartIndex + username.length + 2);
+
         this.hideDropdown();
     }
 }
