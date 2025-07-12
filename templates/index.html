@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}StackIt - AI-Enhanced Q&A Forum{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="container mt-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Home</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-9">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">
+                {% if search_query %}
+                    Search Results for "{{ search_query }}"
+                {% elif tag_filter %}
+                    Questions tagged with "{{ tag_filter }}"
+                {% else %}
+                    Latest Questions
+                {% endif %}
+            </h1>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('ask_question') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Ask Question
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <form method="GET" action="{{ url_for('index') }}" class="d-flex">
+                            <input type="search" name="search" class="form-control me-2" 
+                                   placeholder="Search questions..." value="{{ search_query }}">
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('index', sort='recent') }}" 
+                               class="btn {{ 'btn-primary' if sort_by == 'recent' else 'btn-outline-secondary' }}">
+                                Recent
+                            </a>
+                            <a href="{{ url_for('index', sort='unanswered') }}" 
+                               class="btn {{ 'btn-primary' if sort_by == 'unanswered' else 'btn-outline-secondary' }}">
+                                Unanswered
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Questions List -->
+        {% if questions.items %}
+            {% for question in questions.items %}
+            <div class="card mb-3 question-card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="question-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ question.answer_count }}</span>
+                                    <span class="stat-label">answers</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="views-{{ question.id }}">{{ question.views }}</span>
+                                    <span class="stat-label">views</span>
+                                </div>
+                                {% if question.accepted_answer %}
+                                <div class="stat-item accepted">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <span class="stat-label">accepted</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h5 class="card-title">
+                                <a href="{{ url_for('question_detail', id=question.id) }}" 
+                                   class="text-decoration-none">
+                                    {{ question.title }}
+                                </a>
+                            </h5>
+                            <p class="card-text text-muted">
+                                {{ question.description[:200] }}{% if question.description|length > 200 %}...{% endif %}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="question-tags">
+                                    {% for tag in question.tags %}
+                                    <a href="{{ url_for('index', tag=tag.name) }}" 
+                                       class="badge bg-secondary text-decoration-none me-1">
+                                        {{ tag.name }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted">
+                                    asked {{ question.created_at.strftime('%Y-%m-%d %H:%M') }} by 
+                                    <a href="{{ url_for('profile', username=question.author.username) }}" 
+                                       class="text-decoration-none">
+                                        {{ question.author.username }}
+                                    </a>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if questions.pages > 1 %}
+            <nav aria-label="Question pagination">
+                <ul class="pagination justify-content-center">
+                    {% if questions.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=questions.prev_num, search=search_query, tag=tag_filter, sort=sort_by) }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in questions.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != questions.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('index', page=page_num, search=search_query, tag=tag_filter, sort=sort_by) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if questions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=questions.next_num, search=search_query, tag=tag_filter, sort=sort_by) }}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-question-circle text-muted" style="font-size: 4rem;"></i>
+                <h3 class="mt-3 text-muted">No questions found</h3>
+                <p class="text-muted">
+                    {% if search_query %}
+                        Try adjusting your search terms.
+                    {% else %}
+                        Be the first to ask a question!
+                    {% endif %}
+                </p>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('ask_question') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Ask the First Question
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-tags me-1"></i>Popular Tags
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if popular_tags %}
+                    {% for tag in popular_tags %}
+                    <a href="{{ url_for('index', tag=tag.name) }}" 
+                       class="badge bg-light text-dark text-decoration-none me-1 mb-1">
+                        {{ tag.name }}
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">No tags available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if not current_user.is_authenticated %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-user-plus me-1"></i>Join StackIt
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text small">Join our community to ask questions, provide answers, and help others learn!</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm w-100 mb-2">Sign Up</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm w-100">Log In</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-robot me-1"></i>About Stellar
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text small">
+                    Mention <strong>@Stellar</strong> in your question to get an instant AI-powered answer!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
