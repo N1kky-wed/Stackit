@@ -195,10 +195,14 @@ def question_detail(id):
     
     form = AnswerForm()
     
+    # FIX: Check for stellar mention in the route and pass boolean to template
+    stellar_was_mentioned = check_stellar_mention(question.description)
+    
     return render_template('question_detail.html', 
                          question=question, 
                          answers=answers, 
-                         form=form)
+                         form=form,
+                         stellar_was_mentioned=stellar_was_mentioned)
 
 @app.route('/question/<int:id>/answer', methods=['POST'])
 @login_required

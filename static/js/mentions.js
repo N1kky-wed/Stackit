@@ -1,226 +1,154 @@
-// User mention functionality with autocomplete
+// static/js/mentions.js
+
 class MentionAutocomplete {
-    constructor(textareaSelector) {
-        this.textarea = document.querySelector(textareaSelector);
+    constructor(quill) {
+        this.quill = quill;
+        this.container = quill.container.parentNode.querySelector('.mention-dropdown-container');
+        if (!this.container) {
+            this.container = document.createElement('div');
+            this.container.className = 'mention-dropdown-container';
+            quill.container.parentNode.appendChild(this.container);
+        }
         this.dropdown = null;
         this.users = [];
-        this.currentMentionStart = -1;
-        this.currentMentionEnd = -1;
+        this.mentionStartIndex = -1;
         
-        if (this.textarea) {
-            this.init();
-            this.loadUsers();
-        }
+        this.init();
     }
-    
-    init() {
-        this.textarea.addEventListener('input', (e) => this.handleInput(e));
-        this.textarea.addEventListener('keydown', (e) => this.handleKeydown(e));
-        this.textarea.addEventListener('blur', (e) => this.handleBlur(e));
+
+    async init() {
+        await this.loadUsers();
+        
+        this.quill.on('text-change', (delta, oldDelta, source) => {
+            if (source === 'user') {
+                this.handleInput();
+            }
+        });
+
+        // Register keyboard bindings
+        this.quill.keyboard.addBinding({ key: 'ArrowDown' }, this.navigateDropdown.bind(this, 'down'));
+        this.quill.keyboard.addBinding({ key: 'ArrowUp' }, this.navigateDropdown.bind(this, 'up'));
+        this.quill.keyboard.addBinding({ key: 'Enter' }, (range, context) => {
+            if (this.dropdown) {
+                this.selectActiveUser();
+                return false; // Prevent Quill from handling Enter
+            }
+            return true; // Allow Quill to handle Enter normally
+        });
+        this.quill.keyboard.addBinding({ key: 'Escape' }, this.hideDropdown.bind(this));
     }
-    
+
     async loadUsers() {
         try {
             const response = await fetch('/api/users');
+            if (!response.ok) throw new Error('Failed to load users');
             this.users = await response.json();
         } catch (error) {
-            console.log('Could not load users for mentions');
+            console.error('Could not load users for mentions:', error);
         }
     }
-    
-    handleInput(e) {
-        const cursorPos = this.textarea.selectionStart;
-        const text = this.textarea.value;
+
+    handleInput() {
+        const selection = this.quill.getSelection();
+        if (!selection) {
+            this.hideDropdown();
+            return;
+        }
         
-        // Find @ symbol before cursor
-        const beforeCursor = text.substring(0, cursorPos);
-        const atIndex = beforeCursor.lastIndexOf('@');
-        
+        // FIX: Use Quill v2 compatible method to get text before cursor
+        const textBeforeCursor = this.quill.getText(0, selection.index);
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+
         if (atIndex === -1) {
             this.hideDropdown();
             return;
         }
         
-        // Check if @ is at start or preceded by whitespace
-        const charBeforeAt = atIndex > 0 ? beforeCursor[atIndex - 1] : ' ';
-        if (charBeforeAt !== ' ' && charBeforeAt !== '\n' && atIndex !== 0) {
+        const query = textBeforeCursor.substring(atIndex + 1);
+        if (/\s/.test(query)) {
             this.hideDropdown();
             return;
         }
+
+        this.mentionStartIndex = atIndex;
+        const filteredUsers = this.users.filter(user => user.username.toLowerCase().startsWith(query.toLowerCase()));
         
-        // Get the text after @
-        const afterAt = beforeCursor.substring(atIndex + 1);
-        
-        // Check if there's whitespace in the mention (which would break it)
-        if (afterAt.includes(' ') || afterAt.includes('\n')) {
-            this.hideDropdown();
-            return;
-        }
-        
-        this.currentMentionStart = atIndex;
-        this.currentMentionEnd = cursorPos;
-        
-        // Filter users based on input
-        const filteredUsers = this.users.filter(user => 
-            user.username.toLowerCase().includes(afterAt.toLowerCase())
-        );
-        
-        if (filteredUsers.length > 0 && afterAt.length > 0) {
-            this.showDropdown(filteredUsers, afterAt);
-        } else if (afterAt.length === 0) {
-            this.showDropdown(this.users.slice(0, 5), afterAt);
+        if (filteredUsers.length > 0) {
+            this.showDropdown(filteredUsers);
         } else {
             this.hideDropdown();
         }
     }
-    
-    handleKeydown(e) {
-        if (!this.dropdown) return;
-        
-        const items = this.dropdown.querySelectorAll('.mention-item');
-        const activeItem = this.dropdown.querySelector('.mention-item.active');
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            const nextItem = activeItem ? activeItem.nextElementSibling : items[0];
-            if (nextItem) {
-                if (activeItem) activeItem.classList.remove('active');
-                nextItem.classList.add('active');
-            }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            const prevItem = activeItem ? activeItem.previousElementSibling : items[items.length - 1];
-            if (prevItem) {
-                if (activeItem) activeItem.classList.remove('active');
-                prevItem.classList.add('active');
-            }
-        } else if (e.key === 'Enter' || e.key === 'Tab') {
-            e.preventDefault();
-            if (activeItem) {
-                this.selectUser(activeItem.dataset.username);
-            }
-        } else if (e.key === 'Escape') {
-            this.hideDropdown();
-        }
-    }
-    
-    handleBlur(e) {
-        // Delay hiding to allow clicking on dropdown
-        setTimeout(() => {
-            if (!this.dropdown || !this.dropdown.matches(':hover')) {
-                this.hideDropdown();
-            }
-        }, 200);
-    }
-    
-    showDropdown(users, query) {
-        this.hideDropdown();
+
+    showDropdown(users) {
+        this.hideDropdown(true);
         
         this.dropdown = document.createElement('div');
-        this.dropdown.className = 'mention-dropdown';
-        this.dropdown.style.cssText = `
-            position: absolute;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            min-width: 200px;
-        `;
+        this.dropdown.className = 'mention-dropdown list-group shadow-sm';
         
-        users.forEach((user, index) => {
-            const item = document.createElement('div');
-            item.className = 'mention-item';
+        users.slice(0, 5).forEach((user, index) => {
+            const item = document.createElement('a');
+            item.href = "#";
+            item.className = 'mention-item list-group-item list-group-item-action p-2';
             if (index === 0) item.classList.add('active');
             item.dataset.username = user.username;
-            item.style.cssText = `
-                padding: 8px 12px;
-                cursor: pointer;
-                border-bottom: 1px solid #eee;
-                display: flex;
-                align-items: center;
-            `;
-            
-            const roleColor = user.role === 'admin' ? '#dc3545' : user.role === 'ai' ? '#0d6efd' : '#6c757d';
-            
-            item.innerHTML = `
-                <div>
-                    <div style="font-weight: 500;">${user.username}</div>
-                    <div style="font-size: 12px; color: ${roleColor};">${user.role}</div>
-                </div>
-            `;
-            
-            item.addEventListener('mouseenter', () => {
-                this.dropdown.querySelector('.mention-item.active')?.classList.remove('active');
-                item.classList.add('active');
-            });
-            
-            item.addEventListener('click', () => {
+            item.innerHTML = `<span class="fw-bold">${user.username}</span> <small class="text-muted ms-1">(${user.role})</small>`;
+            item.addEventListener('mousedown', (e) => { // Use mousedown to fire before blur
+                e.preventDefault();
                 this.selectUser(user.username);
             });
-            
             this.dropdown.appendChild(item);
         });
-        
-        // Position dropdown
-        const rect = this.textarea.getBoundingClientRect();
-        const textareaStyle = window.getComputedStyle(this.textarea);
-        
-        this.dropdown.style.left = rect.left + 'px';
-        this.dropdown.style.top = (rect.bottom + 5) + 'px';
-        
-        document.body.appendChild(this.dropdown);
-        
-        // Style active item
-        const style = document.createElement('style');
-        style.textContent = `
-            .mention-item.active {
-                background-color: #e9ecef !important;
-            }
-            .mention-item:hover {
-                background-color: #f8f9fa;
-            }
-        `;
-        document.head.appendChild(style);
+
+        this.container.appendChild(this.dropdown);
+        this.positionDropdown();
     }
     
+    positionDropdown() {
+        const bounds = this.quill.getBounds(this.mentionStartIndex);
+        this.dropdown.style.position = 'absolute';
+        this.dropdown.style.left = `${bounds.left}px`;
+        this.dropdown.style.top = `${bounds.bottom + 5}px`;
+        this.dropdown.style.zIndex = '1050'; // Ensure it's above other elements
+    }
+
     hideDropdown() {
         if (this.dropdown) {
             this.dropdown.remove();
             this.dropdown = null;
         }
+        return true; // Let other handlers run
     }
-    
+
+    navigateDropdown(direction) {
+        if (!this.dropdown) return true;
+        const active = this.dropdown.querySelector('.active');
+        let next;
+        if (direction === 'down') {
+            next = active.nextElementSibling || this.dropdown.firstChild;
+        } else {
+            next = active.previousElementSibling || this.dropdown.lastChild;
+        }
+        if (active) active.classList.remove('active');
+        if (next) next.classList.add('active');
+        return false; // Prevent default arrow behavior
+    }
+
+    selectActiveUser() {
+        if (!this.dropdown) return;
+        const active = this.dropdown.querySelector('.active');
+        if (active) {
+            this.selectUser(active.dataset.username);
+        }
+    }
+
     selectUser(username) {
-        const text = this.textarea.value;
-        const beforeMention = text.substring(0, this.currentMentionStart);
-        const afterMention = text.substring(this.currentMentionEnd);
+        const selection = this.quill.getSelection();
+        const queryLength = selection.index - this.mentionStartIndex;
         
-        const newText = beforeMention + '@' + username + ' ' + afterMention;
-        this.textarea.value = newText;
-        
-        const newCursorPos = this.currentMentionStart + username.length + 2;
-        this.textarea.setSelectionRange(newCursorPos, newCursorPos);
-        
+        this.quill.deleteText(this.mentionStartIndex, queryLength);
+        this.quill.insertText(this.mentionStartIndex, username + ' ');
+        this.quill.setSelection(this.mentionStartIndex + username.length + 1);
         this.hideDropdown();
-        this.textarea.focus();
-        
-        // Trigger input event for any listeners
-        this.textarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
 }
-
-// Initialize mention autocomplete when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize for question description
-    if (document.querySelector('#description')) {
-        new MentionAutocomplete('#description');
-    }
-    
-    // Initialize for answer content
-    if (document.querySelector('#content')) {
-        new MentionAutocomplete('#content');
-    }
-});

@@ -2,91 +2,55 @@
 
 {% block title %}Register - StackIt{% endblock %}
 
-{% block breadcrumbs %}
-<nav class="container mt-3" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Register</li>
-    </ol>
-</nav>
-{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-        <div class="card shadow">
-            <div class="card-header text-center">
-                <h4 class="mb-0">
-                    <i class="fas fa-user-plus me-2"></i>Join StackIt
-                </h4>
-            </div>
-            <div class="card-body">
+        <div class="card shadow-md">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h3 class="mb-1">Create an Account</h3>
+                    <p class="text-muted">Join our community of developers.</p>
+                </div>
                 <form method="POST">
                     {{ form.hidden_tag() }}
-                    
                     <div class="mb-3">
                         {{ form.username.label(class="form-label") }}
                         {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
                         {% if form.username.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.username.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.username.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
-                        <div class="form-text">3-64 characters, letters, numbers, and underscores only.</div>
                     </div>
-                    
                     <div class="mb-3">
                         {{ form.email.label(class="form-label") }}
                         {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
                         {% if form.email.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.email.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
                     </div>
-                    
                     <div class="mb-3">
                         {{ form.password.label(class="form-label") }}
                         {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
                         {% if form.password.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.password.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.password.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
-                        <div class="form-text">Minimum 6 characters.</div>
                     </div>
-                    
-                    <div class="mb-3">
+                     <div class="mb-3">
                         {{ form.password2.label(class="form-label") }}
                         {{ form.password2(class="form-control" + (" is-invalid" if form.password2.errors else "")) }}
                         {% if form.password2.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.password2.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.password2.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
                     </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-user-plus me-1"></i>Create Account
-                        </button>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
                     </div>
                 </form>
             </div>
-            <div class="card-footer text-center">
-                <small class="text-muted">
-                    Already have an account? 
-                    <a href="{{ url_for('login') }}" class="text-decoration-none">Login here</a>
-                </small>
-            </div>
+        </div>
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                Already have an account? <a href="{{ url_for('login') }}">Login</a>
+            </small>
         </div>
     </div>
 </div>

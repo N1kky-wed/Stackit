@@ -3,7 +3,7 @@
 {% block title %}Ask a Question - StackIt{% endblock %}
 
 {% block breadcrumbs %}
-<nav class="container mt-3" aria-label="breadcrumb">
+<nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
         <li class="breadcrumb-item active" aria-current="page">Ask Question</li>
@@ -15,68 +15,47 @@
 <div class="row">
     <div class="col-lg-9">
         <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="fas fa-plus me-2"></i>Ask a Question
-                </h4>
-            </div>
-            <div class="card-body">
-                <form method="POST">
+            <div class="card-body p-4">
+                <h2 class="mb-4">Ask a Public Question</h2>
+                <form method="POST" id="question-form" novalidate>
                     {{ form.hidden_tag() }}
                     
-                    <div class="mb-3">
-                        {{ form.title.label(class="form-label") }}
-                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-bold">Title</label>
+                        <small class="d-block text-muted mb-2">Be specific and imagine you’re asking a question to another person.</small>
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="e.g., How to center a div in CSS?") }}
                         {% if form.title.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.title.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.title.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
-                        <div class="form-text">
-                            Be specific and concise. What is your programming question?
-                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.description.label(class="form-label") }}
-                        <div id="quill-editor" style="height: 300px;"></div>
+                    <div class="mb-4">
+                        <label for="quill-editor" class="form-label fw-bold">Description</label>
+                        <small class="d-block text-muted mb-2">Introduce the problem and expand on what you put in the title. Mention <strong>@Stellar</strong> for AI help!</small>
+                        <div class="position-relative">
+                            <div id="quill-editor" style="height: 300px;"></div>
+                            <div class="mention-dropdown-container"></div>
+                        </div>
                         {{ form.description(style="display: none;", id="description-editor") }}
+                        <!-- FIX: Custom error message container -->
+                        <div id="description-error" class="text-danger mt-1 small" style="display: none;"></div>
                         {% if form.description.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in form.description.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="text-danger mt-1 small">{% for error in form.description.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
-                        <div class="form-text">
-                            Provide details, code samples, and context. Mention <strong>@Stellar</strong> to get an AI response!
-                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.tags.label(class="form-label") }}
-                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else "")) }}
+                    <div class="mb-4">
+                        <label for="tags" class="form-label fw-bold">Tags</label>
+                        <small class="d-block text-muted mb-2">Add up to 5 tags to describe what your question is about.</small>
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), placeholder="e.g., python, flask, javascript") }}
                         {% if form.tags.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.tags.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            <div class="invalid-feedback">{% for error in form.tags.errors %}{{ error }}{% endfor %}</div>
                         {% endif %}
-                        <div class="form-text">
-                            Add relevant tags separated by commas (e.g., python, flask, database)
-                        </div>
                     </div>
                     
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>Cancel
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane me-1"></i>Post Question
-                        </button>
+                    <div class="d-flex">
+                        <button type="submit" class="btn btn-primary">Post Your Question</button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -85,53 +64,14 @@
     
     <div class="col-lg-3">
         <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-lightbulb me-1"></i>Tips for Great Questions
-                </h6>
-            </div>
+            <div class="card-header">Tips for Great Questions</div>
             <div class="card-body">
-                <ul class="list-unstyled small">
-                    <li class="mb-2">
-                        <i class="fas fa-check text-success me-1"></i>
-                        Write a clear, specific title
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-check text-success me-1"></i>
-                        Include relevant code examples
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-check text-success me-1"></i>
-                        Explain what you've tried
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-check text-success me-1"></i>
-                        Add appropriate tags
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-robot text-primary me-1"></i>
-                        Mention <strong>@Stellar</strong> for AI help
-                    </li>
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Summarize the problem</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Describe what you've tried</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Include relevant code</li>
+                    <li class="mb-2"><i class="fas fa-robot text-primary me-2"></i>Mention @Stellar for AI help</li>
                 </ul>
-            </div>
-        </div>
-        
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-tags me-1"></i>Popular Tags
-                </h6>
-            </div>
-            <div class="card-body">
-                {% if popular_tags %}
-                    {% for tag in popular_tags %}
-                    <span class="badge bg-light text-dark me-1 mb-1 tag-suggestion" data-tag="{{ tag.name }}">
-                        {{ tag.name }}
-                    </span>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted small">No popular tags yet.</p>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -142,50 +82,57 @@
 <!-- Mentions JS -->
 <script src="{{ url_for('static', filename='js/mentions.js') }}"></script>
 <script>
-// Initialize Quill editor
-const quill = new Quill('#quill-editor', {
-    theme: 'snow',
-    modules: {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['link'],
-            ['clean']
-        ]
-    }
-});
-
-// Sync Quill content with hidden textarea
-quill.on('text-change', function() {
-    document.getElementById('description-editor').value = quill.root.innerHTML;
-});
-
-// Set initial content if editing
-const initialContent = document.getElementById('description-editor').value;
-if (initialContent) {
-    quill.root.innerHTML = initialContent;
-}
-
-// Tag suggestions
-document.querySelectorAll('.tag-suggestion').forEach(function(tag) {
-    tag.addEventListener('click', function() {
-        const tagName = this.dataset.tag;
-        const tagsInput = document.querySelector('input[name="tags"]');
-        const currentTags = tagsInput.value;
-        
-        if (currentTags === '') {
-            tagsInput.value = tagName;
-        } else if (!currentTags.includes(tagName)) {
-            tagsInput.value = currentTags + ', ' + tagName;
+document.addEventListener('DOMContentLoaded', function() {
+    const quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline'],
+                ['blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+            ]
         }
     });
-});
 
-// Form submission - ensure Quill content is saved
-document.querySelector('form').addEventListener('submit', function() {
-    document.getElementById('description-editor').value = quill.root.innerHTML;
+    // Initialize the mentions autocomplete
+    new MentionAutocomplete(quill);
+
+    const form = document.getElementById('question-form');
+    const hiddenTextarea = document.getElementById('description-editor');
+    const errorDiv = document.getElementById('description-error');
+    
+    // FIX: Custom form submission handler
+    form.addEventListener('submit', function(event) {
+        // Sync quill content to hidden textarea
+        hiddenTextarea.value = quill.root.innerHTML;
+        
+        // Custom validation for Quill editor
+        const minLength = 20;
+        // quill.getText() gets plain text, trim() removes whitespace from ends
+        const textLength = quill.getText().trim().length; 
+
+        if (textLength < minLength) {
+            // Prevent the form from submitting
+            event.preventDefault();
+            
+            // Show custom error message
+            errorDiv.textContent = `Description must be at least ${minLength} characters long.`;
+            errorDiv.style.display = 'block';
+            
+            // Add error class to editor for visual feedback
+            quill.container.classList.add('is-invalid');
+            
+            // Focus the editor so the user can fix it
+            quill.focus();
+        } else {
+            // If valid, hide error message and remove class
+            errorDiv.style.display = 'none';
+            quill.container.classList.remove('is-invalid');
+        }
+    });
 });
 </script>
 {% endblock %}
