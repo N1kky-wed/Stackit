@@ -5,7 +5,6 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-9">
-        <!-- Question Header -->
         <div class="d-flex justify-content-between align-items-start mb-2">
             <h2 class="mb-0">{{ question.title }}</h2>
             {% if current_user.is_authenticated and (current_user.id == question.user_id or current_user.role == 'admin') %}
@@ -23,7 +22,6 @@
             {% endif %}
         </div>
 
-        <!-- Question Metadata -->
         <div class="d-flex align-items-center text-muted small mb-3 border-bottom pb-3" style="border-color: var(--border-color) !important;">
             <span>Asked {{ question.created_at.strftime('%b %d, %Y') }}</span>
             <span class="mx-2">·</span>
@@ -34,7 +32,6 @@
             {% endif %}
         </div>
 
-        <!-- Question Body & Tags -->
         <div class="question-content mt-4">{{ question.description|safe }}</div>
         <div class="question-tags mt-4">
             {% for tag in question.tags %}
@@ -44,13 +41,11 @@
 
         <hr class="my-4" style="border-color: var(--border-color);">
 
-        <!-- Answers Section -->
         <h4 class="mb-3">{{ answers|length }} Answer{{ 's' if answers|length != 1 else '' }}</h4>
 
         {% for answer in answers %}
         <div class="answer-container {% if answer.is_accepted %}accepted{% endif %} {% if answer.author.role == 'ai' %}ai-answer{% endif %}">
             <div class="d-flex">
-                <!-- Vote Controls -->
                 <div class="vote-section text-center me-3 flex-shrink-0">
                     <a href="{{ url_for('vote_answer', answer_id=answer.id, vote_type='up') }}" class="btn btn-sm btn-outline-secondary d-block"><i class="fas fa-chevron-up"></i></a>
                     <span class="vote-score fs-5 my-1 d-block">{{ answer.score }}</span>
@@ -62,7 +57,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Answer Content -->
                 <div class="answer-body flex-grow-1">
                     <div class="answer-content">{{ answer.content|safe }}</div>
                     <div class="d-flex justify-content-end align-items-center mt-3">
@@ -83,16 +77,15 @@
         </div>
         {% endif %}
 
-        <!-- Answer Form -->
         {% if current_user.is_authenticated %}
         <div class="card mt-4">
             <div class="card-body">
                 <h5 class="card-title">Your Answer</h5>
-                {# --- FIX: Added 'novalidate' attribute to the form --- #}
                 <form method="POST" action="{{ url_for('post_answer', id=question.id) }}" id="answer-form" novalidate>
                     {{ form.hidden_tag() }}
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative">
                         <div id="answer-quill-editor" style="height: 200px;"></div>
+                        <div class="mention-dropdown-container"></div>
                         {{ form.content(style="display: none;") }}
                         <div id="answer-error" class="text-danger mt-1 small" style="display: none;"></div>
                     </div>
@@ -118,6 +111,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/mentions.js') }}"></script>
 <script>
     (function() {
         window.confirmDelete = function(questionId) {
@@ -153,14 +147,15 @@
                     }
                 });
 
+                new MentionAutocomplete(quill);
+
                 const answerForm = document.getElementById('answer-form');
                 if (answerForm) {
                     answerForm.addEventListener('submit', (event) => {
                         const minLength = 20;
                         const errorDiv = document.getElementById('answer-error');
                         const textLength = quill.getText().trim().length;
-
-                        // Sync content to hidden textarea BEFORE validation
+                        
                         document.querySelector('textarea[name="content"]').value = quill.root.innerHTML;
 
                         if (textLength < minLength) {
@@ -170,7 +165,6 @@
                             quill.container.classList.add('is-invalid');
                             quill.focus();
                         } else {
-                            // If content is valid, we can let the form submit.
                             errorDiv.style.display = 'none';
                             quill.container.classList.remove('is-invalid');
                         }
@@ -178,7 +172,6 @@
                 }
             }
             
-            // Polling logic for AI answers
             const isStellarMentioned = {{ stellar_was_mentioned | tojson }};
             if (isStellarMentioned) {
                 const initialAnswerCount = {{ answers|length }};
